@@ -1,0 +1,104 @@
+CarbonCalprac Dependency Record
+Updated: 2026-03-26
+
+Crafted by Abhirsc
+
+Current project version
+
+- `0.3.0`
+
+License
+
+- `Apache-2.0`
+
+Environment
+
+- Python: 3.12.1
+- Package manager checked with: `python3 -m pip`
+
+Current install status in this workspace
+
+- `earthengine-api`: installed, version `1.7.19`
+- `geemap`: installed, version `0.37.2`
+- `geopandas`: installed, version `1.1.3`
+- `folium`: installed, version `0.20.0`
+- `pandas`: installed, version `2.3.3`
+- `certifi`: installed, version `2026.2.25`
+- `streamlit`: installed, version `1.55.0`
+- `streamlit-folium`: installed, version `0.27.1`
+- `reportlab`: installed, version `4.4.10`
+
+Required packages for the new script version
+
+- `earthengine-api`
+- `geemap`
+- `geojson`
+
+Recommended support packages
+
+- `geopandas`
+- `shapely`
+- `folium`
+- `pandas`
+- `streamlit`
+- `streamlit-folium`
+- `reportlab`
+- `jupyter`
+- `ipykernel`
+
+Suggested install command
+
+```bash
+python3 -m pip install earthengine-api geemap geojson geopandas shapely folium pandas streamlit streamlit-folium reportlab jupyter ipykernel
+```
+
+Tech stack record
+
+- Python 3.12
+- Google Earth Engine Python API
+- Folium for map export
+- Streamlit local app UI
+- streamlit-folium for map drawing and input capture
+- ReportLab for downloadable PDF reports
+- geemap installed for the Earth Engine workflow, but the current script map output was switched to plain Folium because of a geemap basemap compatibility error in this environment
+- FAO GAUL level-1 boundaries
+- WCMC biomass carbon density
+- Sentinel-2 SR Harmonized
+- Dynamic World
+
+Version tracking note
+
+- Package versions are now recorded from `python3 -m pip show`.
+- A future cleanup step can still add a pinned requirements file for reproducibility.
+
+Bugs and risks recorded for this version
+
+- Earth Engine authentication now works locally after setting `SSL_CERT_FILE` from `certifi`, but the authenticated account or project is still not enabled for Earth Engine use.
+- Earth Engine currently returns: `Not signed up for Earth Engine or project is not registered`.
+- Biomass carbon density is around 2010, while Sentinel-2 and Dynamic World are used for 2020-2021 study years, so temporal mismatch is a known modeling limitation.
+- The first script version uses a GeoJSON file for custom polygons rather than a full interactive polygon-capture app.
+- The yearly animation is a modeled estimate and should be treated as exploratory.
+- The original `geemap.foliumap` import path failed in this environment with a `xyz_to_folium` basemap error, so the script now uses direct Folium layer construction instead.
+
+Tests recorded for this version
+
+- Repository inspection completed.
+- Python syntax validation completed with `python3 -m py_compile`.
+- Dependency installation completed.
+- Earth Engine browser authentication completed.
+- Live Earth Engine query test completed after switching to project `accessdata4app`.
+- Successful first AOI run completed for Australian Capital Territory for `2020-01-01` to `2021-12-31`.
+- Successful local outputs created:
+  - `outputs/act_manual/carbon_analysis_map.html`
+  - `outputs/act_manual/carbon_analysis_summary.json`
+- A memory-limit issue was observed for percentile-based map styling on derived layers, and the current script now uses fixed visualization ranges for reliable first-pass rendering.
+- App-style run test completed successfully with:
+  - HTML map
+  - PNG layer assets
+  - PDF report
+  - JSON summary
+  - reproducibility log
+- Metadata update completed for:
+  - crafted by `Abhirsc`
+  - version `0.3.0`
+  - license `Apache-2.0`

@@ -1,3 +1,14 @@
+---
+title: Global Carbon Density
+emoji: 🌍
+colorFrom: green
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+license: apache-2.0
+---
+
 # CarbonCalprac
 
 Global-first carbon analysis workflow for study and prototyping.

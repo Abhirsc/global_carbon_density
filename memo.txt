@@ -1,0 +1,498 @@
+CarbonCalprac Memo
+Updated: 2026-03-19
+
+Crafted by Abhirsc
+Version: 0.3.0
+License: Apache-2.0
+
+Purpose
+
+This file is the running record for the project.
+Use it to track:
+
+- Process steps
+- Feature decisions
+- Data source choices
+- Theory and interpretation notes
+- Setup and getting-started instructions
+- Questions and follow-up work
+
+==================================================
+1. Project Goal
+==================================================
+
+Build an interactive carbon study environment that works at global scale and can then be clipped to an area of interest (AOI).
+
+The study environment should help us:
+
+- Fetch open geospatial datasets related to carbon
+- Prepare the raw data into aligned layers
+- Analyze emission proxies, sequestration proxies, and storage proxies
+- Produce maps, tables, and report-style summaries
+- Keep the workflow transparent enough for study and reproducibility
+
+Current build strategy:
+
+1. Start with notebooks
+2. Move reusable logic into Python modules
+3. Wrap the workflow in a lightweight UI later if needed
+
+==================================================
+2. Why Global First
+==================================================
+
+Global-first is the easier engineering path because:
+
+- Many strong open datasets are already published globally
+- The same processing code can be reused for any AOI
+- We avoid overfitting the first build to one country
+- Australia can still be handled by clipping the global layers
+
+Australia-specific reporting layers can be added after the global base is working.
+
+==================================================
+3. Theory Summary
+==================================================
+
+Important principle:
+There is no single satellite product that directly gives us "true emissions, sequestration, and storage" at local scale in a complete way.
+
+We need a layered interpretation model.
+
+3.1 Emission layer
+
+Goal:
+Represent atmospheric patterns or hotspot signals related to emissions.
+
+Typical products:
+
+- Sentinel-5P methane (CH4)
+- Sentinel-5P carbon monoxide (CO)
+- Other atmospheric concentration products
+
+Interpretation:
+
+- These products usually show concentration or column abundance
+- They are useful for hotspot detection and anomaly analysis
+- They are not the same as a verified facility inventory
+
+Use in this project:
+
+- Detect hotspot areas
+- Compare periods
+- Build anomaly maps
+
+3.2 Sequestration layer
+
+Goal:
+Represent carbon uptake or sink behavior over land.
+
+Typical products:
+
+- MiCASA land carbon flux
+- Vegetation productivity proxies
+
+Interpretation:
+
+- Often modeled rather than directly measured on the ground
+- Useful for regional trends and comparative analysis
+
+Use in this project:
+
+- Estimate whether an AOI is acting more like a sink or a weaker sink over time
+- Produce trend summaries
+
+3.3 Storage layer
+
+Goal:
+Represent carbon stored in vegetation or soil.
+
+Typical products:
+
+- GEDI biomass
+- Soil organic carbon products such as SoilGrids later
+
+Interpretation:
+
+- Storage is a stock, not a flow
+- This differs from emissions and sequestration, which are more time-dependent processes
+
+Use in this project:
+
+- Estimate biomass stock context
+- Compare land-cover classes
+- Support report-ready summaries
+
+3.4 Validation layer
+
+Goal:
+Provide context from inventories or official reporting products.
+
+Examples:
+
+- National greenhouse inventory datasets
+- Australian DCCEEW data later
+- NPI or NGER where relevant
+
+Interpretation:
+
+- Helps keep us honest
+- Helps explain whether a satellite or model pattern is plausible
+
+==================================================
+4. v1 Dataset Plan
+==================================================
+
+Primary v1 stack:
+
+1. Sentinel-5P CH4
+2. MiCASA land carbon flux
+3. GEDI biomass
+4. ESA WorldCover
+
+Why this stack:
+
+- Global coverage
+- Reasonably accessible
+- Good balance across emission proxy, sequestration, storage, and land context
+
+Known caution:
+
+- The spatial and temporal resolutions differ
+- We must avoid false precision when combining them
+
+==================================================
+5. Standard Workflow Steps
+==================================================
+
+Step 1. Define AOI
+
+Accepted inputs:
+
+- GeoJSON polygon
+- Country boundary
+- State boundary
+- Lat/lon plus buffer
+
+Output:
+
+- One AOI geometry in WGS84
+
+Step 2. Define time window
+
+Need:
+
+- Baseline range
+- Analysis range
+
+Reason:
+
+- We need a stable reference for anomaly calculations
+
+Step 3. Fetch raw data
+
+For each dataset:
+
+- Connect to source
+- Filter by date
+- Filter by AOI
+- Save metadata on units, resolution, and source
+
+Step 4. Clean and standardize
+
+- Handle missing values
+- Clip to AOI
+- Normalize date fields
+- Preserve units
+- Document native resolution
+
+Step 5. Harmonize
+
+- Select an analysis grid
+- Resample only when necessary
+- Aggregate to a defensible scale
+
+Step 6. Derive variables
+
+Examples:
+
+- Mean AOI methane concentration
+- Methane anomaly versus baseline
+- Biomass mean and total
+- Land carbon flux trend
+- Area by land-cover class
+
+Step 7. Generate insights
+
+Expected outputs:
+
+- Hotspot area
+- Sequestration trend summary
+- Storage estimate summary
+- Land-cover contribution summary
+- Caveats and confidence notes
+
+Step 8. Export results
+
+Target outputs:
+
+- CSV
+- GeoJSON
+- Notebook plots
+- Markdown summary
+
+==================================================
+6. Feature Record
+==================================================
+
+Planned features:
+
+- AOI input handling
+- Dataset registry
+- Data fetch functions
+- Clipping and preprocessing
+- Summary metrics
+- Time-series plots
+- Hotspot masks
+- Exportable reports
+- Optional Streamlit UI later
+
+Current status:
+
+- Global-first workflow planned
+- Initial documentation created
+- Source shortlist defined
+
+==================================================
+7. 2026-03-26 Script-First Version
+==================================================
+
+Request for this round:
+
+- Build another version starting with a functional Python script
+- Later convert the workflow into notebooks
+- Use Google Earth Engine datasets and a study-area-driven analysis flow
+
+Datasets selected for this version:
+
+1. FAO GAUL simplified 500 m 2015 level 1
+2. WCMC biomass carbon density v1.0
+3. Sentinel-2 SR Harmonized
+4. Dynamic World v1
+
+What was done:
+
+1. Reviewed the existing repository structure and earlier notebook-first notes.
+2. Confirmed there was no real `src/` implementation yet.
+3. Created a scriptable package entry for Earth Engine-based carbon analysis.
+4. Added support for two AOI paths:
+   - admin-1 selection from GAUL
+   - user polygon from GeoJSON
+5. Added a helper to list valid admin-1 names for a country.
+6. Added study-area mapping output through a saved HTML map.
+7. Added Sentinel-2 preprocessing:
+   - filter by date
+   - filter by study area
+   - cloud percentage less than 10
+   - scale factor `0.0001`
+   - median composite
+   - NDVI from `B8` and `B4`
+8. Added Dynamic World tree-mask extraction:
+   - `label` band
+   - `mode()`
+   - `.eq(1)` for trees
+9. Added carbon stock loading from WCMC biomass carbon density.
+10. Added robust linear regression in Earth Engine using:
+   - constant band
+   - Sentinel-2 spectral bands
+   - NDVI
+   - carbon tonnes per hectare as response
+11. Added prediction, residual, and RMSE calculation.
+12. Added export hooks for:
+   - predicted carbon raster
+   - residual/difference raster
+   - optional MP4 animation
+13. Added `study.md` for theory and getting-started guidance.
+14. Added `dependency.txt` to track packages, risks, and test status.
+15. Validated Python syntax with `python3 -m py_compile`.
+
+Files added this round:
+
+- `src/carboncalprac/__init__.py`
+- `src/carboncalprac/earth_engine_carbon.py`
+- `scripts/run_carbon_analysis.py`
+- `study.md`
+- `dependency.txt`
+
+Important design decisions:
+
+- Script first, notebook second.
+- Keep the code organized so notebook conversion later is mostly a matter of splitting steps into cells.
+- Use the tree mask mainly to focus the regression on forested pixels.
+- Use a constant band plus Sentinel-2 bands plus NDVI as the main predictor stack.
+- Save the map and JSON summary locally, and use Earth Engine export tasks for heavier raster outputs.
+
+Known issues and cautions:
+
+- Required Python packages are now installed in this workspace.
+- Earth Engine browser authentication was completed, but the authenticated account or project still returns:
+  - `Not signed up for Earth Engine or project is not registered`
+- There is a temporal mismatch between 2010 biomass carbon density and 2020-2021 Sentinel-2 or Dynamic World layers.
+- Custom polygon drawing is not yet a full standalone capture workflow; at the moment the custom path is GeoJSON input.
+- End-to-end execution is still blocked until Earth Engine account or project access is enabled.
+- The original `geemap.foliumap` path failed in this environment, so the map output was switched to direct Folium layers.
+
+Features now present in the code:
+
+- Study-area selection from GAUL level 1
+- Study-area selection from GeoJSON polygon
+- Leaflet-style HTML map output
+- Carbon density display
+- NIR and NDVI visualization
+- Tree and non-tree mask display
+- Regression coefficients
+- Residual layer
+- RMSE summary
+- Export task stubs for Earth Engine Drive output
+
+What is next:
+
+1. Confirm Earth Engine account or project registration and enable access.
+2. Run the script on one small admin-1 area first.
+3. Check the exact WCMC band choice and decide whether to expose aboveground and belowground outputs separately.
+4. Improve Sentinel-2 masking with QA or cloud-probability logic if needed.
+5. Convert the working script into a step-by-step notebook series.
+6. Add a simple localhost launcher after the first successful Earth Engine run.
+
+==================================================
+7. Getting Started
+==================================================
+
+Immediate working order:
+
+1. Create project folders for `data/`, `notebooks/`, and `src/`
+2. Build AOI utility functions
+3. Implement source registry for the first four datasets
+4. Build the first notebook for one sample AOI
+5. Validate the metrics and assumptions
+6. Move reusable code into `src/`
+7. Add UI only after notebook workflow is stable
+
+Recommended first notebook question:
+
+"For one AOI and one date range, what do methane hotspot proxy, land carbon flux, biomass stock, and land-cover context look like together?"
+
+==================================================
+8. Rules for Interpretation
+==================================================
+
+- Do not claim exact emissions from concentration maps alone
+- Do not mix units without explicit conversion notes
+- Do not compare rasters at incompatible resolution without aggregation
+- Always label whether a layer is measured, modeled, or proxy-based
+- Always include caveats in report outputs
+
+==================================================
+9. Process Log
+==================================================
+
+2026-03-19
+
+- Created project README
+- Wrote global pipeline plan
+- Wrote open data inventory
+- Added this memo file to track process and theory
+- Created the first VS Code notebook for global AOI analysis using open U.S. GHG Center APIs
+- Added AOI setup, STAC search, map visualization, and first-pass AOI statistics
+- Reworked the notebook into step-by-step chunks for first-time users
+- Added a dedicated extent report and dataset status/error output so AOI results are visible even when clipping fails
+- Added notebook title and author fields at the top
+- Added a live data validation step that reads a real pixel value from each remote asset
+
+2026-03-26
+
+- Installed the Python dependency stack for the Earth Engine script
+- Fixed a runtime import issue by replacing `geemap.foliumap` map rendering with direct Folium layer rendering
+- Completed Earth Engine browser authentication
+- Confirmed the current blocker was Earth Engine account or project access rather than local Python setup
+- Fixed the CLI so `--list-admin1` no longer requires dummy dates
+- Connected the script to the registered Earth Engine project `accessdata4app`
+- Ran a live test for `Australian Capital Territory` for `2020-01-01` to `2021-12-31`
+- Successful local outputs created:
+  - `outputs/act_manual/carbon_analysis_map.html`
+  - `outputs/act_manual/carbon_analysis_summary.json`
+- ACT test summary:
+  - RMSE: about `41.55` tonnes per hectare
+- Found that percentile-based map stretching for derived layers could trigger Earth Engine memory limits
+- Switched the first-pass map styling to fixed visualization ranges so the local HTML map can render reliably
+
+2026-03-28
+
+- Added a local Streamlit study app entry point
+- Added three AOI input paths in the app:
+  - first-level admin boundary selector
+  - drawn polygon
+  - uploaded boundary file
+- Added from and to date controls in the app
+- Added a start button so the analysis only begins after AOI and time window are set
+- Added progress-bar support through the Earth Engine workflow
+- Fixed the app workflow to keep the study analysis at 250 m
+- Added reproducibility logging for each run with `run.log`
+- Added PNG layer asset generation for report use
+- Added a downloadable PDF study report with:
+  - study metadata
+  - learning-oriented explanation of what happened
+  - calculation summary
+  - layer images
+  - regression coefficients
+- Added a final on-screen summary section for completed runs
+- Added download actions for:
+  - PDF report
+  - run log
+  - map HTML
+- Verified the app-style run path by creating:
+  - HTML map
+  - PNG layer images
+  - PDF report
+  - JSON summary
+  - run log
+- Started the local app server on port `8502`
+- Added project metadata for:
+  - crafted by `Abhirsc`
+  - version `0.3.0`
+  - license display
+- Switched project license from a private placeholder to `Apache-2.0`
+- Added a full `LICENSE` file and wired license/version metadata into:
+  - app UI
+  - PDF report
+  - summary outputs
+  - README and project notes
+
+Next expected entries:
+
+- Folder scaffold created
+- First notebook created
+- Dataset access functions added
+- First AOI test completed
+
+==================================================
+10. Open Questions
+==================================================
+
+- Which AOI should be our first default example
+- Which data access path is simplest for each dataset in Python
+- Whether we should standardize on notebooks only first or scaffold Streamlit in parallel
+- Whether soil carbon should be included in v1 or deferred to v2
+
+==================================================
+11. Working Convention
+==================================================
+
+Whenever we complete a meaningful step, update this file with:
+
+- Date
+- What changed
+- Why it changed
+- Any caveats or follow-up items
+
+This keeps the project understandable even as the codebase grows.
