@@ -1,0 +1,10 @@
+earthengine-api
+geemap
+geojson
+geopandas
+shapely
+folium
+pandas
+streamlit==1.45.1
+streamlit-folium
+reportlab
